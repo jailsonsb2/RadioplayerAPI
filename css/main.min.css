@@ -259,7 +259,7 @@ strong {
     padding: var(--main-padding);
 }
 .header-logo-img {
-    height: 40px;
+    height: 80px;
 }
 .toggle-options {
     gap: 0.5rem;
