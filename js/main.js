@@ -772,7 +772,7 @@
           // Establecer la fuente de audio
           audio.src = currentStation.stream_url;
 
-          // Iniciar el stream
+          /*
           function init(current) {
                   // Cancelar el timeout anterior
                   if (timeoutId) clearTimeout(timeoutId);
@@ -819,6 +819,63 @@
                           init(current);
                   }, TIME_TO_REFRESH);
           }
+          */
+         
+          // Iniciar o stream
+          function init(current) {
+                // Cancelar o timeout anterior
+                if (timeoutId) clearTimeout(timeoutId);
+        
+                // Se a url da estação atual for diferente da estação atual, atualiza a informação
+                if (currentStation.stream_url !== current.stream_url) {
+                currentStation = current;
+                }
+                const server = currentStation.server || "itunes";
+                const jsonUri = currentStation.api || API_URL + encodeURIComponent(current.stream_url);
+                fetch(jsonUri)
+                .then((response) => response.json())
+                .then(async (res) => {
+                        const current = normalizeTitle(res);
+                        console.log(current);
+        
+                        // Se currentSong for diferente da música atual, atualiza a informação
+                        const title = current.title;
+                        if (currentSongPlaying !== title) {
+                        // Atualizar a música atual
+                        currentSongPlaying = title;
+                        let artist = current.artist;
+                        const art = currentStation.album;
+                        const cover = currentStation.cover;
+                        const history = normalizeHistory(res);
+                        artist = title === artist ? null : artist;
+        
+                        // Verificar se o título e o artista não são undefined
+                        if (title && artist) {
+                                const dataFrom = await getDataFrom({
+                                artist,
+                                title,
+                                art,
+                                cover,
+                                server,
+                                });
+        
+                                // Estabelecer dados da música atual
+                                currentSong(dataFrom);
+                                mediaSession(dataFrom);
+                                setLyrics(dataFrom.artist, dataFrom.title);
+                                setHistory(history, currentStation, server);
+                        } else {
+                                console.log("Título ou artista undefined, não será feita a busca pela capa do álbum.");
+                        }
+                        }
+                })
+                .catch((error) => console.log(error));
+                timeoutId = setTimeout(() => {
+                init(current);
+                }, TIME_TO_REFRESH);
+          }
+        
+
           init(currentStation);
           createStations(stations, currentStation, (station) => {
                   init(station);
