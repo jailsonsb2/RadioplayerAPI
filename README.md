@@ -1,6 +1,6 @@
 # Radio Player Icecast/Shoutcast with REST API Now Playing and PWA Support
 
-This PHP project displays information about songs playing on Icecast/Shoutcast radio streams, including history, album art, lyrics, and Progressive Web App (PWA) support.
+This PHP project displays information about songs playing on Icecast/Shoutcast radio streams, including history, album art, lyrics, and Progressive Web App (PWA) support. The project offers flexibility to be used with either the local API or the web API, allowing you to choose the option that best suits your needs. Additionally, it is possible to rename the index.php file to index.html to use the project exclusively with the web API.
 
 ## Demo Screenshots
 
