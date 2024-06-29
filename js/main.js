@@ -772,56 +772,8 @@
           // Establecer la fuente de audio
           audio.src = currentStation.stream_url;
 
-          /*
-          function init(current) {
-                  // Cancelar el timeout anterior
-                  if (timeoutId) clearTimeout(timeoutId);
 
-                  // Si la url de la estación actual es diferente a la estación actual, se actualiza la información
-                  if (currentStation.stream_url !== current.stream_url) {
-                          currentStation = current;
-                  }
-                  const server = currentStation.server || "itunes";
-                  const jsonUri = currentStation.api || API_URL + encodeURIComponent(current.stream_url);
-                  fetch(jsonUri)
-                          .then((response) => response.json())
-                          .then(async (res) => {
-                                  const current = normalizeTitle(res);
-                                  console.log(current);
-
-                                  // Si currentSong es diferente a la canción actual, se actualiza la información
-                                  const title = current.title;
-                                  if (currentSongPlaying !== title) {
-                                          // Actualizar la canción actual
-                                          currentSongPlaying = title;
-                                          let artist = current.artist;
-                                          const art = currentStation.album;
-                                          const cover = currentStation.cover;
-                                          const history = normalizeHistory(res);
-                                          artist = title === artist ? null : artist;
-                                          const dataFrom = await getDataFrom({
-                                                  artist,
-                                                  title,
-                                                  art,
-                                                  cover,
-                                                  server,
-                                          });
-
-                                          // Establecer datos de la canción actual
-                                          currentSong(dataFrom);
-                                          mediaSession(dataFrom);
-                                          setLyrics(dataFrom.artist, dataFrom.title);
-                                          setHistory(history, currentStation, server);
-                                  }
-                          })
-                          .catch((error) => console.log(error));
-                  timeoutId = setTimeout(() => {
-                          init(current);
-                  }, TIME_TO_REFRESH);
-          }
-          */
-         
-          // Iniciar o stream
+          // Iniciar o stream ( atualizado para evitar valor undefined )
           function init(current) {
                 // Cancelar o timeout anterior
                 if (timeoutId) clearTimeout(timeoutId);
