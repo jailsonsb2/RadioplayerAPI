@@ -799,7 +799,6 @@
                         const art = currentStation.album;
                         const cover = currentStation.cover;
                         const history = normalizeHistory(res);
-                        artist = title === artist ? null : artist;
         
                         // Verificar se o título e o artista não são undefined
                         if (title && artist) {
