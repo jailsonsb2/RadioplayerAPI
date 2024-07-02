@@ -35,7 +35,7 @@
                         api: "get_stream_title.php?url=https://stream.zeno.fm/yn65fsaurfhvv",
                         stream_url: "https://stream.zeno.fm/yn65fsaurfhvv",
                         //tv_url: "https://eu1.servers10.com:2020/VideoPlayer/8106?autoplay=1",
-                        server: "spotify",
+                        server: "",
                         program: {
                             time: "24/7",
                             name: "Jailson Web Radio",
