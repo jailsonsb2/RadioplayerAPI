@@ -161,8 +161,10 @@
           }
           const stream = data.results;
           const results = {
-                  title: stream.title || title,
-                  artist: stream.artist || artist,
+                  //title: stream.title || title,
+                  //artist: stream.artist || artist,
+                  title: title,
+                  artist: artist,
                   thumbnail: stream.artwork || defaultArt,
                   art: stream.artwork || defaultArt,
                   cover: stream.artwork || defaultCover,
@@ -210,8 +212,10 @@
           }
           const itunes = data.results[0];
           const results = {
-                  title: itunes.trackName || title,
-                  artist: itunes.artistName || artist,
+                  //title: itunes.trackName || title,
+                  //artist: itunes.artistName || artist,
+                  title: title,
+                  artist: artist,
                   thumbnail: itunes.artworkUrl100 || defaultArt,
                   art: itunes.artworkUrl100 ? changeImageSize(itunes.artworkUrl100, "600x600") : defaultArt,
                   cover: itunes.artworkUrl100 ? changeImageSize(itunes.artworkUrl100, "1500x1500") : defaultCover,
