@@ -144,7 +144,7 @@ if ($title) {
 
     // Montar a resposta JSON
     $response = [
-        "songtitle" => "$artist - $song",
+        "songtitle" => "$song - $artist",
         "artist" => $artist,
         "song" => $song,
         "source" => $url,
