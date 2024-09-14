@@ -7,152 +7,118 @@ error_reporting(E_ALL);
 $allowedUrls = [
     'https://stream.zeno.fm/yn65fsaurfhvv',
     'https://sv2.globalhostlive.com/proxy/bendistereo/stream2',
+    'https://azuracast.invictamix.pt:8093/emissao.mp3',
+    'https://stream.radiorostova.ru/radio-rostova-high.mp3',
+
     // Adicione outras URLs permitidas aqui
 ];
 
-class StreamManager {
-    private $allowedUrls;
-    private $historyManager;
+function getMp3StreamTitle($streamingUrl, $interval) {
+    $needle = 'StreamTitle=';
+    $headers = [
+        'Icy-MetaData: 1',
+        'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
+    ];
 
-    public function __construct(array $allowedUrls) {
-        $this->allowedUrls = $allowedUrls;
+    $context = stream_context_create([
+        'http' => [
+            'header' => implode("\r\n", $headers),
+            'timeout' => 30 // Definindo um timeout para a conexão
+        ]
+    ]);
+
+    $stream = @fopen($streamingUrl, 'r', false, $context);
+    if ($stream === false) {
+        return null;
     }
 
-    public function getStreamTitle($streamingUrl, $interval = 19200): ?string {
-        $needle = 'StreamTitle=';
-        $headers = [
-            'Icy-MetaData: 1',
-            'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
-        ];
-
-        $context = stream_context_create([
-            'http' => [
-                'header' => implode("\r\n", $headers),
-                'timeout' => 30 // Definindo um timeout para a conexão
-            ]
-        ]);
-
-        $stream = @fopen($streamingUrl, 'r', false, $context);
-        if ($stream === false) {
-            return null;
+    $metaDataInterval = null;
+    foreach ($http_response_header as $header) {
+        if (stripos($header, 'icy-metaint') !== false) {
+            $metaDataInterval = (int)trim(explode(':', $header)[1]);
+            break;
         }
+    }
 
-        $metaDataInterval = null;
-        foreach ($http_response_header as $header) {
-            if (stripos($header, 'icy-metaint') !== false) {
-                $metaDataInterval = (int)trim(explode(':', $header)[1]);
-                break;
-            }
-        }
-
-        if ($metaDataInterval === null) {
-            fclose($stream);
-            return null;
-        }
-
-        $offset = 0;
-        $maxReads = 10; // Definindo um número máximo de leituras para evitar loops infinitos
-        while (!feof($stream) && $maxReads > 0) {
-            fread($stream, $metaDataInterval);
-            $buffer = fread($stream, $interval);
-            $titleIndex = strpos($buffer, $needle);
-            if ($titleIndex !== false) {
-                $title = substr($buffer, $titleIndex + strlen($needle));
-                $title = substr($title, 0, strpos($title, ';'));
-                fclose($stream);
-                return trim($title, "' ");
-            }
-            $offset += $metaDataInterval + $interval;
-            $maxReads--;
-        }
+    if ($metaDataInterval === null) {
         fclose($stream);
         return null;
     }
 
-    public function extractArtistAndSong($title): array {
-        $title = trim($title, "'");
-        if (strpos($title, '-') !== false) {
-            [$artist, $song] = explode('-', $title, 2);
-            return [trim($artist), trim($song)];
+    $offset = 0;
+    $maxReads = 10; // Definindo um número máximo de leituras para evitar loops infinitos
+    while (!feof($stream) && $maxReads > 0) {
+        fread($stream, $metaDataInterval);
+        $buffer = fread($stream, $interval);
+        $titleIndex = strpos($buffer, $needle);
+        if ($titleIndex !== false) {
+            $title = substr($buffer, $titleIndex + strlen($needle));
+            $title = substr($title, 0, strpos($title, ';'));
+            fclose($stream);
+            return trim($title, "' ");
         }
-        return ['', trim($title)];
+        $offset += $metaDataInterval + $interval;
+        $maxReads--;
     }
+    fclose($stream);
+    return null;
+}
 
-    public function getAlbumArt($artist, $song): ?string {
-        $url = 'https://itunes.apple.com/search?term=' . urlencode("$artist $song") . '&media=music&limit=1';
-        $response = @file_get_contents($url);
-        if ($response === false) {
-            return null;
-        }
+function extractArtistAndSong($title) {
+    $title = trim($title, "'");
+    if (strpos($title, '-') !== false) {
+        [$artist, $song] = explode('-', $title, 2);
+        return [trim($artist), trim($song)];
+    }
+    return ['', trim($title)];
+}
 
-        $data = json_decode($response, true);
-        if (!empty($data) && isset($data['resultCount']) && $data['resultCount'] > 0) {
-            return str_replace('100x100bb', '512x512bb', $data['results'][0]['artworkUrl100']);
-        }
+function getAlbumArt($artist, $song) {
+    $url = 'https://itunes.apple.com/search?term=' . urlencode("$artist $song") . '&media=music&limit=1';
+    $response = @file_get_contents($url);
+    if ($response === false) {
         return null;
     }
 
-    public function updateHistory($url, $artist, $song): array {
-        $this->historyManager = new HistoryManager($url);
-        $this->historyManager->addSong($artist, $song);
-        return $this->historyManager->getHistory(true);
+    $data = json_decode($response, true);
+    if ($data['resultCount'] > 0) {
+        return str_replace('100x100bb', '512x512bb', $data['results'][0]['artworkUrl100']);
     }
+    return null;
 }
 
-class HistoryManager {
-    private $url;
-    private $historyFile;
-    private $historyLimit = 5;
+function getHistoryFileName($url, $ignoreFirst = true) {
+    $suffix = $ignoreFirst ? '_ignore_first.json' : '.json';
+    return 'history_' . md5($url) . $suffix;
+}
 
-    public function __construct($url) {
-        $this->url = $url;
-        $this->historyFile = $this->getHistoryFileName();
-    }
+function updateHistory($url, $artist, $song) {
+    $historyFile = getHistoryFileName($url, false); // Alterado para não ignorar a primeira entrada
+    $historyLimit = 5;
 
-    private function getHistoryFileName(): string {
-        $historyDir = 'history';
-        if (!file_exists($historyDir)) {
-            mkdir($historyDir, 0755, true);
+    if (!file_exists($historyFile)) {
+        $history = [];
+    } else {
+        $history = json_decode(file_get_contents($historyFile), true);
+        if ($history === null) {
+            $history = [];
         }
-        return $historyDir . '/' . hash('sha256', $this->url) . '.json';
     }
 
-    public function loadHistory(): array {
-        if (file_exists($this->historyFile)) {
-            $history = json_decode(file_get_contents($this->historyFile), true);
-            return $history !== null ? $history : [];
-        }
-        return [];
+    // Verifica se a música já está no histórico
+    $currentSong = ["title" => $song, "artist" => $artist];
+    $existingIndex = array_search($currentSong, array_column($history, 'song'));
+    if ($existingIndex !== false) {
+        // Remove a entrada existente para evitar duplicações
+        array_splice($history, $existingIndex, 1);
     }
 
-    public function saveHistory(array $history): void {
-        file_put_contents($this->historyFile, json_encode($history));
-    }
+    // Adiciona a nova música no início do histórico
+    array_unshift($history, ["song" => $currentSong]);
+    $history = array_slice($history, 0, $historyLimit);
+    file_put_contents($historyFile, json_encode($history));
 
-    public function addSong($artist, $song): void {
-        $history = $this->loadHistory();
-        $currentSong = ["title" => $song, "artist" => $artist];
-
-        // Verifica se a música já está no histórico
-        $existingIndex = array_search($currentSong, array_column($history, 'song'));
-        if ($existingIndex !== false) {
-            // Remove a entrada existente para evitar duplicações
-            unset($history[$existingIndex]);
-        }
-
-        // Adiciona a nova música no início do histórico
-        array_unshift($history, ["song" => $currentSong]);
-
-        // Limita o histórico ao número máximo de entradas
-        $history = array_slice($history, 0, $this->historyLimit);
-
-        $this->saveHistory($history);
-    }
-
-    public function getHistory(bool $ignoreFirst = true): array {
-        $history = $this->loadHistory();
-        return $ignoreFirst ? array_slice($history, 1) : $history;
-    }
+    return $history;
 }
 
 header('Content-Type: application/json');
@@ -170,27 +136,27 @@ if (!in_array($url, $allowedUrls)) {
     exit;
 }
 
-$streamManager = new StreamManager($allowedUrls);
-$title = $streamManager->getStreamTitle($url, $interval);
-
+$title = getMp3StreamTitle($url, $interval);
 if ($title) {
-    [$artist, $song] = $streamManager->extractArtistAndSong($title);
-    $artUrl = $streamManager->getAlbumArt($artist, $song);
-    $history = $streamManager->updateHistory($url, $artist, $song);
+    [$artist, $song] = extractArtistAndSong($title);
+    $artUrl = getAlbumArt($artist, $song);
+    $history = updateHistory($url, $artist, $song);
 
-    // Montar a resposta JSON
+    // Ignorar o primeiro elemento do histórico se existir
+    $filteredHistory = array_slice($history, 1);
+
     $response = [
-        "songtitle" => "$song - $artist",
         "artist" => $artist,
         "song" => $song,
-        "source" => $url,
-        "artwork" => $artUrl,
-        "song_history" => $history
+        "history" => array_map(function($entry) {
+            return [
+                "artist" => $entry['song']['artist'],
+                "song" => $entry['song']['title']
+            ];
+        }, $filteredHistory)
     ];
-
+    
     echo json_encode($response);
 } else {
     echo json_encode(["error" => "Failed to retrieve stream title"]);
 }
-
-?>
