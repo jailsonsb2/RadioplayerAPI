@@ -1,5 +1,7 @@
 # Radio Player Icecast/Shoutcast with REST API Now Playing and PWA Support
 
+> 🏛️ **Historical repository** — this is the original (June 2024) public version of my radio "now playing" metadata API, preserved with its full commit history as the record of this work. For the actively maintained version, see [Radioplayer_api](https://github.com/jailsonsb2/Radioplayer_api).
+
 This PHP project displays information about songs playing on Icecast/Shoutcast radio streams, including history, album art, lyrics, and Progressive Web App (PWA) support. The project offers flexibility to be used with either the local API or the web API, allowing you to choose the option that best suits your needs. Additionally, it is possible to rename the index.php file to index.html to use the project exclusively with the web API.
 
 ## Demo Screenshots
@@ -215,3 +217,17 @@ header('Access-Control-Allow-Origin: *');
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
+---
+
+## 📜 History
+
+First published in mid-2024, this project descends from one of the first open-source "now playing" metadata APIs for web radio players written in plain PHP ([RadioplayerAPI](https://github.com/jailsonsb2/RadioplayerAPI), June 2024). The response format it introduced — `songtitle`, `artist`, `song`, `source`, `song_history` — has since been widely adopted across the web radio ecosystem, including by third-party commercial products.
+---
+
+## ⚖️ License
+
+This project is licensed under the **GNU AGPL-3.0** (see [LICENSE](LICENSE)): you are free to use, modify and redistribute it — including commercially — provided derivative works remain open source and keep the original copyright notices, **even when offered only as a hosted/network service**.
+
+**Closed-source / commercial licensing:** to embed this code in a proprietary product without AGPL obligations, a separate commercial license is available — contact [contato@jailson.es](mailto:contato@jailson.es).
+
+Copyright (C) 2024-2026 Jailson Bezerra ([@jailsonsb2](https://github.com/jailsonsb2))
